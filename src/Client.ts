@@ -49,16 +49,25 @@ class Client extends DJSClient implements Bot {
     });
   }
 
-  async Commands(dir: string, callback?: (name?: string, command?: Command) => unknown) {
+  private async loader<T>(dir: string, callback?: (command: T) => unknown) {
     const files = await readdir(join(__dirname, dir));
     for (const file of files) {
       const stat = await lstat(join(__dirname, dir, file));
       if (stat.isDirectory()) this.Commands(join(__dirname, dir));
       else if (!file.endsWith(".ts" || file.endsWith(".d.ts"))) continue;
 
-      const command = (await import(join(__dirname, dir, file))).default;
+      const command = (await import(join(__dirname, dir, file))).default    
+      callback!(command)
+    }
+  }
+
+  public async Commands(dir: string, callback?: (cmd: Command) => unknown) {
+
+    this.loader<Command>(dir, (command) => {
+
       this.commands.set(command.name.toLowerCase(), command);
-      callback!(command.name, command);
+
+      callback!(command)
 
       if (command.category) {
         let categoryGetter = this.categories.get(
@@ -69,9 +78,14 @@ class Client extends DJSClient implements Bot {
 
         this.categories.set(command.name.toLowerCase(), categoryGetter);
       }
-    }
+
+    })
 
     return this;
+  }
+
+  public async SlashCommands() {
+
   }
 };
 
