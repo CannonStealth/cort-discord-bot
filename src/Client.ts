@@ -1,21 +1,22 @@
 import { Client as DJSClient, Collection, ClientOptions } from "discord.js";
 import { join } from "path";
 import { readdir, lstat } from "fs/promises";
-import { Client as Bot, key, Command } from "./types";
+import { Client as Bot, key, Command, Slash } from "./types";
 
 class Client extends DJSClient implements Bot {
-
   public prefix: "-";
   public commands: Collection<key, Command>;
-  public aliases: Collection<string, string>
+  public aliases: Collection<string, string>;
   public categories: Collection<string, string[]>;
-  
+  public slashCommands: Collection<string, Slash>;
+
   constructor(options: ClientOptions) {
     super(options);
     this.prefix = "-";
     this.commands = new Collection();
     this.categories = new Collection();
-    this.aliases = new Collection()
+    this.aliases = new Collection();
+    this.slashCommands = new Collection();
 
     this.on("messageCreate", (message) => {
       if (message.author.bot || message.channel.type === "DM") return;
@@ -23,18 +24,42 @@ class Client extends DJSClient implements Bot {
       const { prefix } = this;
       if (!message.content.startsWith(prefix)) return;
 
-      const args = message.content.slice(prefix.length).trim().split(/ +/g)
+      const args = message.content.slice(prefix.length).trim().split(/ +/g);
 
       const cmdName = args.shift();
-      
-      if (!message.content.startsWith(`${prefix.toLowerCase()}${cmdName?.toLowerCase()}`)) return;
 
-      const cmd = this.commands.get(cmdName!.toLowerCase()) || this.commands.get(this.aliases.get(cmdName!.toLowerCase())!)
+      if (
+        !message.content.startsWith(
+          `${prefix.toLowerCase()}${cmdName?.toLowerCase()}`
+        )
+      )
+        return;
 
-      if (!cmd) return
+      const cmd =
+        this.commands.get(cmdName!.toLowerCase()) ||
+        this.commands.get(this.aliases.get(cmdName!.toLowerCase())!);
 
-      cmd.run({ client: this, args, message })
+      if (!cmd) return;
+
+      cmd.run({ client: this, args, message });
       return;
+    });
+
+    this.on("interactionCreate", async (interaction) => {
+      if (!interaction.inGuild() && interaction.isCommand()) {
+        return interaction.reply("Try using slash commands in a guild!");
+      }
+
+      const user = interaction.user;
+      const member = await interaction.guild!.members.fetch(user.id);
+      const guild = interaction.guild!;
+
+      if (interaction.isCommand()) {
+        let cmd = this.slashCommands.get(interaction.commandName);
+
+        if (!cmd) return;
+        cmd.run({ client: this, interaction, member, guild, user });
+      }
     });
   }
 
@@ -45,18 +70,16 @@ class Client extends DJSClient implements Bot {
       if (stat.isDirectory()) this.Commands(join(__dirname, dir));
       else if (!file.endsWith(".ts" || file.endsWith(".d.ts"))) continue;
 
-      const command = (await import(join(__dirname, dir, file))).default    
-      callback!(command)
+      const command = (await import(join(__dirname, dir, file))).default;
+      callback!(command);
     }
   }
 
   public async Commands(dir: string, callback?: (cmd: Command) => unknown) {
-
-    this.loader<Command>(dir, (command) => {
-
+    this.loader(dir, (command: Command) => {
       this.commands.set(command.name.toLowerCase(), command);
 
-      callback!(command)
+      callback!(command);
 
       if (command.category) {
         let categoryGetter = this.categories.get(
@@ -67,15 +90,31 @@ class Client extends DJSClient implements Bot {
 
         this.categories.set(command.name.toLowerCase(), categoryGetter);
       }
-
-    })
+    });
 
     return this;
   }
 
-  public async SlashCommands() {
+  public SlashCommands<T>(dir: string, callback?: (file: Slash) => unknown) {
+    const application = this.application!;
 
+    this.loader(dir, (file: Slash) => {
+      const toSend = {
+        name: file.name,
+        description: file.description,
+        defaultPermission: file.default,
+        options: file.options,
+      };
+
+      this.slashCommands.set(file.name, file)
+
+      application.commands
+        .create(toSend)
+        .then(() => callback!(file));
+    });
+
+    return this;
   }
-};
+}
 
-export default Client
+export default Client;
