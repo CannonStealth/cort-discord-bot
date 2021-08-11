@@ -49,14 +49,14 @@ class Client extends DJSClient implements Bot {
     });
   }
 
-  async Commands(dir: string, callback?: Function) {
+  async Commands(dir: string, callback?: (name?: string, command?: Command) => unknown) {
     const files = await readdir(join(__dirname, dir));
     for (const file of files) {
       const stat = await lstat(join(__dirname, dir, file));
       if (stat.isDirectory()) this.Commands(join(__dirname, dir));
-      else if (!file.endsWith(".js")) continue;
+      else if (!file.endsWith(".ts" || file.endsWith(".d.ts"))) continue;
 
-      const command = require(join(__dirname, dir, file));
+      const command = (await import(join(__dirname, dir, file))).default;
       this.commands.set(command.name.toLowerCase(), command);
       callback!(command.name, command);
 
