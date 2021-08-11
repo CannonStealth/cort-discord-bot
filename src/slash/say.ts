@@ -2,6 +2,7 @@ import { Slash } from "../types";
 
 export default {
     name: "say",
+    stop: true,
     description: "Makes the bot repeat something",
     options: [
         {

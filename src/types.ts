@@ -6,6 +6,7 @@ import {
   Guild,
   GuildMember,
   User,
+  GuildResolvable
 } from "discord.js";
 
 export type Awaited<T> = T | Promise<T>;
@@ -45,5 +46,7 @@ export interface Slash {
   description: string;
   default?: boolean;
   options?: Array<ApplicationCommandOptionData>;
+  guilds?: string[]
+  stop?: boolean
   run: ({}: SlashRun) => Awaited<unknown>;
 }
