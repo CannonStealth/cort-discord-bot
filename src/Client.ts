@@ -7,13 +7,15 @@ class Client extends DJSClient implements Bot {
 
   public prefix: "-";
   public commands: Collection<key, Command>;
-  public categories: Collection<key, string[]>;
+  public aliases: Collection<string, string>
+  public categories: Collection<string, string[]>;
   
   constructor(options: ClientOptions) {
     super(options);
     this.prefix = "-";
     this.commands = new Collection();
     this.categories = new Collection();
+    this.aliases = new Collection()
 
     this.on("messageCreate", (message) => {
       if (message.author.bot || message.channel.type === "DM") return;
@@ -21,30 +23,17 @@ class Client extends DJSClient implements Bot {
       const { prefix } = this;
       if (!message.content.startsWith(prefix)) return;
 
-      let args = message.content.split(prefix);
-      args.shift();
+      const args = message.content.slice(prefix.length).trim().split(/ +/g)
 
-      const command =
-        this.commands.find((c) =>
-          args.join(" ").toLowerCase().startsWith(c.name.toLowerCase())
-        ) ||
-        this.commands.find((c) =>
-          c.aliases!
-             .map((a) => a.toLowerCase())
-            .some((b) => args.join(" ").startsWith(b))
-        );
+      const cmdName = args.shift();
+      
+      if (!message.content.startsWith(`${prefix.toLowerCase()}${cmdName?.toLowerCase()}`)) return;
 
-      if (!command) return;
+      const cmd = this.commands.get(cmdName!.toLowerCase()) || this.commands.get(this.aliases.get(cmdName!.toLowerCase())!)
 
-      const toSplit = args.join(" ").startsWith(command.name)
-        ? command.name
-        : command.aliases
-            ?.map((a) => a.toLowerCase())
-            .find((b) => args.join(" ").startsWith(b));
+      if (!cmd) return
 
-      args = args.join(" ").split(toSplit!).slice(1).join(" ").split(/ +/g);
-      command.run({ client: this, args, message });
-
+      cmd.run({ client: this, args, message })
       return;
     });
   }

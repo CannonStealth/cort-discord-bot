@@ -19,5 +19,6 @@ export interface Command {
 export interface Client {
     prefix: "-";
     commands: Collection<key, Command>;
-    categories: Collection<key, string[]>;
+    categories: Collection<string, string[]>;
+    aliases: Collection<string, string>;
   }
