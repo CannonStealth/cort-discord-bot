@@ -100,6 +100,7 @@ class Client extends DJSClient implements Bot {
 
     this.loader(dir, (file: Slash) => {
 
+      this.slashCommands.set(file.name, file);
       if (!file.stop) {
       const toSend = {
         name: file.name,
@@ -107,8 +108,6 @@ class Client extends DJSClient implements Bot {
         defaultPermission: file.default,
         options: file.options,
       };
-
-      this.slashCommands.set(file.name, file);
 
       if (file.guilds && file.guilds.length) {
         for (const guild of file.guilds) {
