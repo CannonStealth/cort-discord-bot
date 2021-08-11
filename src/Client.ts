@@ -1,7 +1,7 @@
 import { Client as DJSClient, Collection, ClientOptions } from "discord.js";
 import { join } from "path";
 import { readdir, lstat } from "fs/promises";
-import { Client as Bot, key, Command } from "./utils";
+import { Client as Bot, key, Command } from "./types";
 
 class Client extends DJSClient implements Bot {
 

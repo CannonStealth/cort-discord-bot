@@ -1,4 +1,4 @@
-import { Command } from "../utils"
+import { Command } from "../types"
 
 export default {
     name: "say",
