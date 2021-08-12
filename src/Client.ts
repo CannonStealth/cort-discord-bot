@@ -2,13 +2,15 @@ import { Client as DJSClient, Collection, ClientOptions } from "discord.js";
 import { join } from "path";
 import { readdir, lstat } from "fs/promises";
 import { Client as Bot, key, Command, Slash } from "./types";
+import Clash from "./Clash"
 
 class Client extends DJSClient implements Bot {
-  public prefix: "-";
+  public readonly prefix: "-";
   public commands: Collection<key, Command>;
   public aliases: Collection<string, string>;
   public categories: Collection<string, string[]>;
   public slashCommands: Collection<string, Slash>;
+  public readonly clashRoyale: Clash;
 
   constructor(options: ClientOptions) {
     super(options);
@@ -17,6 +19,7 @@ class Client extends DJSClient implements Bot {
     this.categories = new Collection();
     this.aliases = new Collection();
     this.slashCommands = new Collection();
+    this.clashRoyale = new Clash(process.env.CLASH_TOKEN!);
 
     this.on("messageCreate", (message) => {
       if (message.author.bot || message.channel.type === "DM") return;

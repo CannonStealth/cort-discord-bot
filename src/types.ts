@@ -8,6 +8,8 @@ import {
   User
 } from "discord.js";
 
+import Clash from "./Clash"
+
 export type Awaited<T> = T | Promise<T>;
 export type key = string | number | symbol;
 
@@ -38,6 +40,7 @@ export interface Client {
   categories: Collection<string, string[]>;
   aliases: Collection<string, string>;
   slashCommands: Collection<string, Slash>;
+  clashRoyale: Clash;
 }
 
 export interface Slash {
@@ -48,4 +51,8 @@ export interface Slash {
   guilds?: string[]
   stop?: boolean
   run: ({}: SlashRun) => Awaited<unknown>;
+}
+
+export interface ClashInterface {
+  token: string;
 }
