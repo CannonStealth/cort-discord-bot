@@ -84,6 +84,8 @@ class Client extends DJSClient implements Bot {
 
       callback!(command);
 
+      if (command.aliases?.length) for (const alias of command.aliases) this.aliases.set(alias, command.name)
+
       if (command.category) {
         let categoryGetter = this.categories.get(
           command.category.toLowerCase()
