@@ -1,5 +1,9 @@
 import { Command } from "../types";
-import { MessageButton, MessageActionRow, MessageComponentInteraction  } from "discord.js";
+import {
+  MessageButton,
+  MessageActionRow,
+  MessageComponentInteraction,
+} from "discord.js";
 
 export default {
   name: "button",
@@ -22,7 +26,7 @@ export default {
       time: 15000,
     });
 
-    row.components[0].setDisabled(true)
+    row.components[0].setDisabled(true);
 
     collector.on("collect", async (i) => {
       if (i.customId === "a") {

@@ -2,7 +2,7 @@ import { Client as DJSClient, Collection, ClientOptions } from "discord.js";
 import { join } from "path";
 import { readdir, lstat } from "fs/promises";
 import { Client as Bot, key, Command, Slash } from "./types";
-import Clash from "./Clash"
+import Clash from "./Clash";
 
 class Client extends DJSClient implements Bot {
   public readonly prefix: "-";
@@ -84,7 +84,9 @@ class Client extends DJSClient implements Bot {
 
       callback!(command);
 
-      if (command.aliases?.length) for (const alias of command.aliases) this.aliases.set(alias, command.name)
+      if (command.aliases?.length)
+        for (const alias of command.aliases)
+          this.aliases.set(alias, command.name);
 
       if (command.category) {
         let categoryGetter = this.categories.get(
@@ -104,26 +106,25 @@ class Client extends DJSClient implements Bot {
     const application = this.application!;
 
     this.loader(dir, (file: Slash) => {
-
       this.slashCommands.set(file.name, file);
       if (!file.stop) {
-      const toSend = {
-        name: file.name,
-        description: file.description,
-        defaultPermission: file.default,
-        options: file.options,
-      };
+        const toSend = {
+          name: file.name,
+          description: file.description,
+          defaultPermission: file.default,
+          options: file.options,
+        };
 
-      if (file.guilds && file.guilds.length) {
-        for (const guild of file.guilds) {
-          application.commands
-            .create(toSend, guild)
-            .then(() => callback!(file));
+        if (file.guilds && file.guilds.length) {
+          for (const guild of file.guilds) {
+            application.commands
+              .create(toSend, guild)
+              .then(() => callback!(file));
+          }
+        } else {
+          application.commands.create(toSend).then(() => callback!(file));
         }
-      } else {
-      application.commands.create(toSend).then(() => callback!(file));
       }
-    }
     });
 
     return this;
