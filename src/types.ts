@@ -5,8 +5,7 @@ import {
   CommandInteraction,
   Guild,
   GuildMember,
-  User,
-  GuildResolvable
+  User
 } from "discord.js";
 
 export type Awaited<T> = T | Promise<T>;
