@@ -9,6 +9,8 @@ export default {
   name: "button",
   aliases: ["but", "btn"],
   async run({ message }) {
+
+    await message.delete()
     const row = new MessageActionRow().addComponents(
       new MessageButton()
         .setCustomId("a")
@@ -16,7 +18,7 @@ export default {
         .setStyle("PRIMARY")
     );
 
-    message.channel.send({ content: "heh", components: [row] });
+    const msg = await message.channel.send({ content: "heh", components: [row] });
 
     const filter = (i: MessageComponentInteraction) =>
       i.customId === "a" && i.user.id === message.author.id;
@@ -33,5 +35,9 @@ export default {
         await i.update({ content: "A button was clicked!", components: [row] });
       }
     });
+
+    collector.on("end", async (i) => {
+      msg.delete()
+    })
   },
 } as Command;
