@@ -10,15 +10,22 @@ import {
 
 import Clash from "./Clash"
 
+// Does it return a promise or not
 export type Awaited<T> = T | Promise<T>;
+
+// Keys for records
 export type key = string | number | symbol;
 
+
+// Run types for normal commands
 type Run = {
   client: Client;
   args: string[];
   message: Message;
 };
 
+
+// Run types for slash commands
 type SlashRun = {
   client: Client;
   interaction: CommandInteraction;
@@ -27,6 +34,7 @@ type SlashRun = {
   user: User;
 };
 
+// How a normal command should look like
 export interface Command {
   name: string;
   aliases?: string[];
@@ -34,6 +42,7 @@ export interface Command {
   run: ({}: Run) => Awaited<unknown>;
 }
 
+// Our Client
 export interface Client {
   prefix: "-";
   commands: Collection<key, Command>;
@@ -43,6 +52,7 @@ export interface Client {
   clashRoyale: Clash;
 }
 
+// How a Slash command should look like
 export interface Slash {
   name: string;
   description: string;
@@ -53,6 +63,7 @@ export interface Slash {
   run: ({}: SlashRun) => Awaited<unknown>;
 }
 
+// Clash class interface
 export interface ClashInterface {
   token: string;
 }

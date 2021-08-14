@@ -8,7 +8,7 @@ import {
 export default {
   name: "button",
   aliases: ["but", "btn"],
-  async run({ args, message }) {
+  async run({ message }) {
     const row = new MessageActionRow().addComponents(
       new MessageButton()
         .setCustomId("a")

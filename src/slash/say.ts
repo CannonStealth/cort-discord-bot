@@ -1,5 +1,6 @@
 import { Slash } from "../types";
 
+// exporting the command
 export default {
     name: "say",
     stop: true,
@@ -13,6 +14,8 @@ export default {
         }
     ],
     run({ interaction }) {
+
+        // replying the message
         interaction.reply((interaction.options.getString("message")! || "Hmm empty message?")) 
     }
 } as Slash

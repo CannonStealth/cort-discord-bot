@@ -8,7 +8,7 @@ export default class Clash implements ClashInterface {
       this.token = token;
   }
 
-  public async request(endpoint: string) {
+  public async request(endpoint: string) { // request function to handler requests
     if (!this.token) throw new Error("No token was provided");
     const controller = new AbortController();
 
