@@ -8,8 +8,14 @@ import {
 
 export default {
   name: "help",
-  async run({ message }) {
+  async run({ message, client }) {
     try {
+
+      const menu = new MessageSelectMenu()
+      const options = []
+
+
+      
       await message.delete();
       const row = new MessageActionRow().addComponents(
         new MessageSelectMenu()

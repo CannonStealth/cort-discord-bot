@@ -40,6 +40,7 @@ export interface Command {
   aliases?: string[];
   category?: string;
   run: ({}: Run) => Awaited<unknown>;
+  description?: string;
 }
 
 // Our Client

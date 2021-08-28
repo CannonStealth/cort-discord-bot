@@ -1,5 +1,6 @@
 import Client from "./Client";
 import { config as dotenv } from "dotenv";
+import menu from "./helpMenu";
 dotenv({ path: "src/.env" }); // Accessing .env files
 
 const client = new Client({ intents: 32767 }); // Defining client
@@ -15,5 +16,7 @@ client.on("ready", () => {
   .Commands("./commands", ({ name }) => console.log(`Loading command ${name}`));
   // Enable slash commands and normal commands
 });
+
+const preparedMenu = menu(client)
 
 client.login(process.env!.TOKEN); // Login the client
