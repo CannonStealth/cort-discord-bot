@@ -7,6 +7,8 @@ export default {
   name: "docs",
   async run({ args, message }) {
 
+    if (!args.length) return message.channel.send("Specify what you want to search")
+
     const res = await fetch(
         `https://djsdocs.sorta.moe/v2/embed?src=stable&q=${encodeURIComponent(
           args.join(" ")
@@ -18,8 +20,8 @@ export default {
       } else {
         let embed = new MessageEmbed().setAuthor(
           "Discord.JS Documentaion",
-          data.author!.iconURL,
-          data.author!.url
+        data.author?.iconURL,
+          data.author?.url
         );
         if (data.title) {
           embed.setTitle(data.title);

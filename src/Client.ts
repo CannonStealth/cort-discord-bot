@@ -1,4 +1,4 @@
-import { Client as DJSClient, Collection, ClientOptions } from "discord.js";
+import { Client as DJSClient, Collection, ClientOptions, MessageOptions } from "discord.js";
 import { join } from "path";
 import { readdir, lstat } from "fs/promises";
 import { Client as Bot, key, Command, Slash } from "./types";
@@ -11,6 +11,7 @@ class Client extends DJSClient implements Bot {
   public categories: Collection<string, string[]>;
   public slashCommands: Collection<string, Slash>;
   public readonly clashRoyale: Clash;
+  public helpMenu?: MessageOptions
   // types
 
   constructor(options: ClientOptions) {
@@ -21,6 +22,7 @@ class Client extends DJSClient implements Bot {
     this.aliases = new Collection();
     this.slashCommands = new Collection();
     this.clashRoyale = new Clash(process.env.CLASH_TOKEN!);
+    this.helpMenu = undefined
     // adding properties
 
     // Message event 
@@ -110,7 +112,7 @@ class Client extends DJSClient implements Bot {
     return this; 
   }
 
-  public SlashCommands(dir: string, callback?: (file: Slash) => unknown) {
+  public async SlashCommands(dir: string, callback?: (file: Slash) => unknown) {
     const application = this.application!;
 
     this.loader(dir, (file: Slash) => { // loading

@@ -5,7 +5,8 @@ import {
   CommandInteraction,
   Guild,
   GuildMember,
-  User
+  User,
+  MessageOptions
 } from "discord.js";
 
 import Clash from "./Clash"
@@ -46,6 +47,7 @@ export interface Command {
 // Our Client
 export interface Client {
   prefix: "-";
+  helpMenu?: MessageOptions;
   commands: Collection<key, Command>;
   categories: Collection<string, string[]>;
   aliases: Collection<string, string>;
