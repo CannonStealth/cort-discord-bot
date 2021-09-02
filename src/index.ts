@@ -1,5 +1,9 @@
 import Client from "./Client";
 import { config as dotenv } from "dotenv";
+import { TextChannel, Message } from "discord.js"
+import TikTok from "tiktok-scraper";
+
+const userID = "pingouro"
 
 dotenv({ path: "src/.env" }); // Accessing .env files
 
@@ -15,8 +19,10 @@ client.on("ready", async () => {
   await client.Commands("./commands", ({ name }) => console.log(`Loading command ${name}`))
 
 
+  const userId = (await TikTok.getUserProfileInfo(userID)).user.id
+  const user = await TikTok.user(userId)
 
-  // Enable slash commands and normal commands
+
 });
 
 

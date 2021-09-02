@@ -53,6 +53,7 @@ export interface Client {
   aliases: Collection<string, string>;
   slashCommands: Collection<string, Slash>;
   clashRoyale: Clash;
+  
 }
 
 // How a Slash command should look like

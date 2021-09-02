@@ -23,6 +23,7 @@ class Client extends DJSClient implements Bot {
     this.slashCommands = new Collection();
     this.clashRoyale = new Clash(process.env.CLASH_TOKEN!);
     this.helpMenu = undefined
+
     // adding properties
 
     // Message event 
