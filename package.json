@@ -20,5 +20,9 @@
   },
   "devDependencies": {
     "@types/firebase": "^3.2.1"
+  },
+
+  "engines": {
+    "node": "16.x"
   }
 }

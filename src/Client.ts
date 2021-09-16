@@ -238,7 +238,7 @@ class Client extends DJSClient {
       const stat = await lstat(join(__dirname, dir, file));
       if (stat.isDirectory()) this.Commands(join(__dirname, dir));
       // checking if it's a directory
-      else if (!file.endsWith(".ts" || file.endsWith(".d.ts"))) continue;
+      else if (!file.endsWith(".js") && (!file.endsWith(".ts") || file.endsWith(".d.ts"))) continue;
 
       const command = (await import(join(__dirname, dir, file))).default;
       callback!(command); // invoking the callback
