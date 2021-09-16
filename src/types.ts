@@ -1,15 +1,16 @@
 import {
-  Collection,
   Message,
   ApplicationCommandOptionData,
   CommandInteraction,
   Guild,
   GuildMember,
   User,
-  MessageOptions
+  Snowflake
 } from "discord.js";
 
-import Clash from "./Clash"
+import mongoose from "mongoose"
+
+import Client from "./Client"
 
 // Does it return a promise or not
 export type Awaited<T> = T | Promise<T>;
@@ -44,17 +45,7 @@ export interface Command {
   description?: string;
 }
 
-// Our Client
-export interface Client {
-  prefix: "-";
-  helpMenu?: MessageOptions;
-  commands: Collection<key, Command>;
-  categories: Collection<string, string[]>;
-  aliases: Collection<string, string>;
-  slashCommands: Collection<string, Slash>;
-  clashRoyale: Clash;
-  
-}
+
 
 // How a Slash command should look like
 export interface Slash {
@@ -70,4 +61,16 @@ export interface Slash {
 // Clash class interface
 export interface ClashInterface {
   token: string;
+}
+
+
+
+export interface Warn {
+  author: string,
+  reason: string,
+  time: number
+}
+
+export interface Warns extends mongoose.Document {
+  warns: Warn[] | null
 }
