@@ -46,6 +46,7 @@ class Client extends discord_js_1.Client {
         this.warnExpirationTime = this.day * 2;
         this.clientToken = process.env.TOKEN;
         this.mongoPath = process.env.MONGO;
+        this.dir = require.main?.path;
         this.spam = new Map();
         this.warnings = mongoose_1.default.model("warns", new mongoose_1.default.Schema({
             _id: {
@@ -169,16 +170,20 @@ class Client extends discord_js_1.Client {
         });
     }
     async loader(dir, callback) {
-        const files = await promises_1.readdir(path_1.join(__dirname, dir)); // get every files and folders
+        const files = await promises_1.readdir(path_1.join(this.dir, dir)); // get every files and folders
         for (const file of files) {
-            const stat = await promises_1.lstat(path_1.join(__dirname, dir, file));
-            if (stat.isDirectory())
-                this.Commands(path_1.join(__dirname, dir));
-            // checking if it's a directory
-            else if (!file.endsWith(".js") && (!file.endsWith(".ts") || file.endsWith(".d.ts")))
+            const stat = await promises_1.lstat(path_1.join(this.dir, dir, file));
+            if (stat.isDirectory()) {
+                this.loader(path_1.join(dir, file), callback);
                 continue;
-            const command = (await Promise.resolve().then(() => __importStar(require(path_1.join(__dirname, dir, file))))).default;
-            callback(command); // invoking the callback
+            }
+            // checking if it's a directory
+            else if (!file.endsWith(".js") &&
+                (!file.endsWith(".ts") || file.endsWith(".d.ts")))
+                continue;
+            const command = (await Promise.resolve().then(() => __importStar(require(path_1.join(this.dir, dir, file))))).default;
+            if (callback)
+                callback(command); // invoking the callback
         }
     }
     async Commands(dir, callback) {
@@ -190,11 +195,12 @@ class Client extends discord_js_1.Client {
                 for (const alias of command.aliases)
                     this.aliases.set(alias, command.name); // setting aliases
             if (command.category) {
-                let categoryGetter = this.categories.get(command.category.toLowerCase());
+                let category = command.category;
+                let categoryGetter = this.categories.get(category.toLowerCase());
                 if (!categoryGetter)
-                    categoryGetter = [command.category.toLowerCase()];
-                categoryGetter.push(command.name.toLowerCase());
-                this.categories.set(command.name.toLowerCase(), categoryGetter);
+                    categoryGetter = [category];
+                categoryGetter.push(command.name);
+                this.categories.set(category.toLowerCase(), categoryGetter);
                 // setting categories
             }
         });
@@ -386,6 +392,12 @@ class Client extends discord_js_1.Client {
                     .replace("s", " + 0 + ") +
                 "0 ) * 1000")
             : false;
+    }
+    caps(text) {
+        return text
+            .toLowerCase()
+            .replace(/_/g, " ")
+            .replace(/\b[a-zA-Z]/g, (m) => m.toUpperCase());
     }
     convert(number, decimals = 0) {
         let totalSeconds = number / 1000;

@@ -3,6 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
     name: "say",
     aliases: ["talk"],
+    usage: "<message>",
+    description: "Makes the bot talk",
+    category: "Misc",
+    example: "Hello",
     async run({ args, message }) {
         // deleting message
         await message.delete();

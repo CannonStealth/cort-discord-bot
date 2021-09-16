@@ -3,6 +3,10 @@ import { Command } from "../types"
 
 export default {
     name: "warns",
+    description: "Shows warns of someone",
+    usage: "<@user>",
+    category: "Information",
+    example: "@Rubidium",
     async run({ args, message, client }) {
         const user = message.mentions.users.first()
 

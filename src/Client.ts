@@ -42,6 +42,7 @@ class Client extends DJSClient {
   public readonly mongoPath: string;
   public readonly warnings: mongoose.Model<SchemaWarns>;
   public readonly warnExpirationTime: number;
+  public readonly dir: string;
 
   // types
 
@@ -58,6 +59,7 @@ class Client extends DJSClient {
     this.warnExpirationTime = this.day * 2;
     this.clientToken = process.env!.TOKEN!;
     this.mongoPath = process.env.MONGO!;
+    this.dir = require.main?.path!;
     this.spam = new Map();
     this.warnings = mongoose.model(
       "warns",
@@ -233,15 +235,23 @@ class Client extends DJSClient {
   }
 
   private async loader<T>(dir: string, callback?: (command: T) => unknown) {
-    const files = await readdir(join(__dirname, dir)); // get every files and folders
+    const files = await readdir(join(this.dir, dir)); // get every files and folders
     for (const file of files) {
-      const stat = await lstat(join(__dirname, dir, file));
-      if (stat.isDirectory()) this.Commands(join(__dirname, dir));
+      const stat = await lstat(join(this.dir, dir, file));
+      if (stat.isDirectory()) {
+        this.loader(join(dir, file), callback);
+        continue;
+      }
       // checking if it's a directory
-      else if (!file.endsWith(".js") && (!file.endsWith(".ts") || file.endsWith(".d.ts"))) continue;
+      else if (
+        !file.endsWith(".js") &&
+        (!file.endsWith(".ts") || file.endsWith(".d.ts"))
+      )
+        continue;
 
-      const command = (await import(join(__dirname, dir, file))).default;
-      callback!(command); // invoking the callback
+      const command = (await import(join(this.dir, dir, file))).default;
+
+      if (callback) callback!(command); // invoking the callback
     }
   }
 
@@ -257,13 +267,14 @@ class Client extends DJSClient {
           this.aliases.set(alias, command.name); // setting aliases
 
       if (command.category) {
-        let categoryGetter = this.categories.get(
-          command.category.toLowerCase()
-        );
-        if (!categoryGetter) categoryGetter = [command.category.toLowerCase()];
-        categoryGetter.push(command.name.toLowerCase());
+        let category = command.category;
 
-        this.categories.set(command.name.toLowerCase(), categoryGetter);
+        let categoryGetter = this.categories.get(category.toLowerCase());
+        if (!categoryGetter) categoryGetter = [category];
+        categoryGetter.push(command.name);
+
+        this.categories.set(category.toLowerCase(), categoryGetter);
+
         // setting categories
       }
     });
@@ -393,9 +404,8 @@ class Client extends DJSClient {
       for (const { id, time } of mutes) {
         if (time < Date.now()) {
           try {
-            
             const member = await guild.members.fetch(id);
-            await this.unmute(member)
+            await this.unmute(member);
             this.report({
               colour: "YELLOW",
               description: `<@${id}> was auto-unmuted\nReason: mute timeout expired`,
@@ -481,16 +491,14 @@ class Client extends DJSClient {
   }
 
   public async mute(user: GuildMember, expiration: number) {
-
     try {
-    await this.set(`mutes/${user.id}`, {
-      time: Date.now() + expiration,
-    });
-    await user.roles.add("871100739248848966");
-
-  } catch {
-    return
-  }
+      await this.set(`mutes/${user.id}`, {
+        time: Date.now() + expiration,
+      });
+      await user.roles.add("871100739248848966");
+    } catch {
+      return;
+    }
   }
 
   public time(text: string): number | false {
@@ -505,7 +513,14 @@ class Client extends DJSClient {
               .replace("s", " + 0 + ") +
             "0 ) * 1000"
         )
-      : false
+      : false;
+  }
+
+  public caps(text: string) {
+    return text
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b[a-zA-Z]/g, (m) => m.toUpperCase());
   }
 
   public convert(number: number, decimals: number = 0) {
@@ -570,14 +585,11 @@ class Client extends DJSClient {
   }
 
   public async unmute(member: GuildMember) {
-
     try {
-
-    await member.roles.remove("871100739248848966");
-    await this.remove(`mutes/${member.id}`);
-
+      await member.roles.remove("871100739248848966");
+      await this.remove(`mutes/${member.id}`);
     } catch {
-      return
+      return;
     }
   }
 }

@@ -9,14 +9,6 @@ const c = "♨️";
 /**
  * @param text - Should be a string
  */
-function caps(text) {
-    if (typeof text != "string")
-        throw new Error("Param should be a string");
-    return text
-        .toLowerCase()
-        .replace(/_/g, " ")
-        .replace(/\b[a-zA-Z]/g, (m) => m.toUpperCase());
-}
 const permissions = [
     "CREATE_INSTANT_INVITE",
     "KICK_MEMBERS",
@@ -60,6 +52,9 @@ exports.default = {
     name: "permissions",
     aliases: ["perm", "perms"],
     category: "Information",
+    description: "Shows a user permission",
+    usage: "[@user] [#channel]",
+    example: "@Rubidium #general",
     async run({ message, args, client }) {
         message.member.permissions.toArray();
         const channel = (message.mentions.channels.first() ||
@@ -74,7 +69,7 @@ exports.default = {
             .setTitle(`${user.user.username} Permissions`)
             .setColor(user.displayColor);
         permissions.forEach((perm) => {
-            description += `${user.permissions.has(perm) ? yes : no} | ${channel.permissionsFor(userId).has(perm) ? yes : no} - ${caps(perm)}\n`;
+            description += `${user.permissions.has(perm) ? yes : no} | ${channel.permissionsFor(userId).has(perm) ? yes : no} - ${client.caps(perm)}\n`;
         });
         embed.setDescription(x + description + x);
         return message.channel.send({ embeds: [embed] });

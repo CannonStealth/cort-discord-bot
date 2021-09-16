@@ -11,13 +11,6 @@ const c = "♨️";
  * @param text - Should be a string
  */
 
-function caps(text: string) {
-  if (typeof text != "string") throw new Error("Param should be a string");
-  return text
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b[a-zA-Z]/g, (m) => m.toUpperCase());
-}
 
 const permissions: PermissionResolvable[] = [
   "CREATE_INSTANT_INVITE",
@@ -63,6 +56,9 @@ export default {
   name: "permissions",
   aliases: ["perm", "perms"],
   category: "Information",
+  description: "Shows a user permission",
+  usage: "[@user] [#channel]",
+  example: "@Rubidium #general",
   async run({ message, args, client }) {
     message.member!.permissions.toArray();
 
@@ -87,7 +83,7 @@ export default {
     permissions.forEach((perm) => {
       description += `${user!.permissions.has(perm) ? yes : no} | ${
         channel.permissionsFor(userId)!.has(perm) ? yes : no
-      } - ${caps(perm as string)}\n`;
+      } - ${client.caps(perm as string)}\n`;
     });
     embed.setDescription(x + description + x);
 

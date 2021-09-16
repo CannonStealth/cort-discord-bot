@@ -38,6 +38,8 @@ type SlashRun = {
 
 // How a normal command should look like
 export interface Command {
+  usage: string,
+  example: string,
   name: string;
   aliases?: string[];
   category?: string;

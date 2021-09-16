@@ -3,6 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 exports.default = {
     name: "warns",
+    description: "Shows warns of someone",
+    usage: "<@user>",
+    category: "Information",
+    example: "@Rubidium",
     async run({ args, message, client }) {
         const user = message.mentions.users.first();
         if (!user)

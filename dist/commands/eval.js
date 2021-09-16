@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
     name: "private",
     aliases: ["eval", "priv", "e"],
-    category: "private",
     async run({ message, client, args }) {
         try {
             if (message.author.id !== "853004468954333224")
