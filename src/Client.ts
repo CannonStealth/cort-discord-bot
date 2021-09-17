@@ -115,12 +115,12 @@ class Client extends DJSClient {
           (url.includes("https://vm.tiktok/") ||
             /(discord\.(gg|io|me|li)|discordapp\.com\/invite)/i.test(
               message.content
-            )) &&
+            ) || url.includes("https://www.youtube.com/")) &&
           message.channel.id !== "864588389550129152"
         ) {
           await message.delete();
           message.channel.send(
-            `<@${message.author.id}> you got 1 warn for advertising\nIf you want to share a tiktok video or a discord invite share in <#864588389550129152>, your warn will be removed in 3 days`
+            `<@${message.author.id}> you got 1 warn for advertising\nIf you want to share a tiktok video or a discord invite share in <#864588389550129152>, your warn will be removed in 2 days`
           );
           await this.warn(
             message.member!,
