@@ -110,7 +110,7 @@ class Client extends DJSClient {
         );
       }
       const url = this.hasURL(message.content);
-      if (url && url[0] && !url[0].includes("https://tenor.com/view")) {
+      if (url && url.length && !url[0].includes("https://tenor.com/view") && !url[0].includes("https://link.clashroyale.com")) {
         if (
           (url.includes("https://vm.tiktok/") ||
             /(discord\.(gg|io|me|li)|discordapp\.com\/invite)/i.test(
@@ -120,7 +120,17 @@ class Client extends DJSClient {
         ) {
           await message.delete();
           message.channel.send(
-            `<@${message.author.id}> you got 1 warn for sending suspicious links\nIf you want to share a tiktok video or a discord invite share in <#864588389550129152>, your warn will be removed in 3 days`
+            `<@${message.author.id}> you got 1 warn for advertising\nIf you want to share a tiktok video or a discord invite share in <#864588389550129152>, your warn will be removed in 3 days`
+          );
+          await this.warn(
+            message.member!,
+            `Was advertising (${url[0]})`,
+            message.channel as TextChannel
+          );
+        } else {
+          await message.delete();
+          message.channel.send(
+            `<@${message.author.id}> you got 1 warn for sending suspicious links\nIf the link isn't malicious, tell an admin to remove your warn.`
           );
           await this.warn(
             message.member!,

@@ -82,12 +82,17 @@ class Client extends discord_js_1.Client {
                 await this.warn(message.member, "Said the n word", message.channel);
             }
             const url = this.hasURL(message.content);
-            if (url && url[0] && !url[0].includes("https://tenor.com/view")) {
+            if (url && url.length && !url[0].includes("https://tenor.com/view") && !url[0].includes("https://link.clashroyale.com")) {
                 if ((url.includes("https://vm.tiktok/") ||
                     /(discord\.(gg|io|me|li)|discordapp\.com\/invite)/i.test(message.content)) &&
                     message.channel.id !== "864588389550129152") {
                     await message.delete();
-                    message.channel.send(`<@${message.author.id}> you got 1 warn for sending suspicious links\nIf you want to share a tiktok video or a discord invite share in <#864588389550129152>, your warn will be removed in 3 days`);
+                    message.channel.send(`<@${message.author.id}> you got 1 warn for advertising\nIf you want to share a tiktok video or a discord invite share in <#864588389550129152>, your warn will be removed in 3 days`);
+                    await this.warn(message.member, `Was advertising (${url[0]})`, message.channel);
+                }
+                else {
+                    await message.delete();
+                    message.channel.send(`<@${message.author.id}> you got 1 warn for sending suspicious links\nIf the link isn't malicious, tell an admin to remove your warn.`);
                     await this.warn(message.member, `Sent suspicious links (${url[0]})`, message.channel);
                 }
             }
