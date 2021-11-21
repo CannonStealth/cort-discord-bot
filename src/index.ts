@@ -1,19 +1,20 @@
 import Client from "./Client";
 import { TextChannel } from "discord.js";
 
+const client = new Client({ intents: 32767, partials: ["MESSAGE", "REACTION", "CHANNEL"] }); // Defining client
 
-
-const client = new Client({ intents: 32767 }); // Defining client
 
 client.on("ready", async () => {
 
   client.welcomeChannel = await client.channels.fetch("864586491505147904") as TextChannel
   client.reportChannel = await client.channels.fetch("887408209441218580") as TextChannel
+  client.formsChannel = await client.channels.fetch("908649014336041001") as TextChannel
 
-  client.user!.setPresence({
-    activities: [{ name: "ClashOrTrash", type: "WATCHING" }],
-    status: "idle",
-  }); // Setting client's status
+  const sts = await client.get("status")
+
+  if (sts && "status" in sts && "type" in sts && "activity" in sts) await client.user!.setPresence({
+    status: sts.status, activities: [{ type: sts.type, name: sts.activity }]
+  })
 
   await client.SlashCommands("./slash", ({ name }) =>
     console.log("Creating | Updating slash command " + name)

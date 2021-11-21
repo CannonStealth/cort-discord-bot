@@ -5,7 +5,8 @@ import {
   Guild,
   GuildMember,
   User,
-  Snowflake
+  Snowflake,
+  PermissionResolvable
 } from "discord.js";
 
 import mongoose from "mongoose"
@@ -45,6 +46,7 @@ export interface Command {
   category?: string;
   run: ({}: Run) => Awaited<unknown>;
   description?: string;
+  admin?: boolean;
 }
 
 

@@ -1,3 +1,6 @@
-src/
+code
 node_modules
 package-lock.json
+config.json
+firebase.json
+.gitattributes

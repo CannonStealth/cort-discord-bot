@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { Command } from "../types";
+import { Command } from "../../types";
 import { MessageEmbed } from "discord.js";
 
 const reduce = (str: string, int: number) => str.length > int ? str.slice(int - 3) + "..." : str

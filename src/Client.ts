@@ -10,17 +10,17 @@ import {
   GuildMember,
   Guild,
   ColorResolvable,
+  GuildChannel,
+  Message,
 } from "discord.js";
 import { join } from "path";
 import { readdir, lstat } from "fs/promises";
 import { key, Command, Slash, Warns as SchemaWarns, Warn } from "./types";
 import Clash from "./Clash";
 import firebaseConfig from "./firebase.json";
-import { config as dotenv } from "dotenv";
 import firebase from "firebase";
 import mongoose, { Schema } from "mongoose";
-
-dotenv({ path: "src/.env" }); // Accessing .env file
+import { token, mongo } from "./config.json";
 
 class Client extends DJSClient {
   public readonly prefix: "-";
@@ -31,6 +31,7 @@ class Client extends DJSClient {
   public readonly clashRoyale: Clash;
   public helpMenu?: MessageOptions;
   public welcomeChannel!: TextChannel;
+  public formsChannel!: TextChannel;
   public readonly day: number;
   public readonly clientToken: this["token"];
   public readonly database: firebase.database.Database;
@@ -53,12 +54,12 @@ class Client extends DJSClient {
     this.categories = new Collection();
     this.aliases = new Collection();
     this.slashCommands = new Collection();
-    this.clashRoyale = new Clash(process.env.CLASH_TOKEN!);
+    this.clashRoyale = new Clash(undefined!);
     this.helpMenu = undefined;
     this.day = 86400000;
     this.warnExpirationTime = this.day * 2;
-    this.clientToken = process.env!.TOKEN!;
-    this.mongoPath = process.env.MONGO!;
+    this.clientToken = token;
+    this.mongoPath = mongo;
     this.dir = require.main?.path!;
     this.spam = new Map();
     this.warnings = mongoose.model(
@@ -91,106 +92,280 @@ class Client extends DJSClient {
       .then(() => console.log(`Connected to MongoDB`))
       .catch(console.error);
 
-    // Message event
-    this.on("messageCreate", async (message) => {
-      if (message.author.bot || message.channel.type === "DM") return;
-
+    this.on("messageReactionAdd", async (reaction, user) => {
       if (
-        message.content.toLowerCase().includes("nigga") ||
-        message.content.toLowerCase().includes("nigger")
+        reaction.message.id === "904147919521849354" &&
+        reaction.emoji.name === "📨" &&
+        !(reaction.message.channel as GuildChannel).parent?.children.find((c) =>
+          c.name.includes(user.id)
+        )
       ) {
-        await message.delete();
-        message.channel.send(
-          `<@${message.author.id}> you got 1 warn for saying the n word`
-        );
-        await this.warn(
-          message.member!,
-          "Said the n word",
-          message.channel as TextChannel
-        );
-      }
-      const url = this.hasURL(message.content);
-      if (url && url.length && !url[0].includes("https://tenor.com/view") && !url[0].includes("https://link.clashroyale.com")) {
-        if (
-          (url.includes("https://vm.tiktok/") ||
-            /(discord\.(gg|io|me|li)|discordapp\.com\/invite)/i.test(
-              message.content
-            ) || url.includes("https://www.youtube.com/")) &&
-          message.channel.id !== "864588389550129152"
-        ) {
-          await message.delete();
-          message.channel.send(
-            `<@${message.author.id}> you got 1 warn for advertising\nIf you want to share a tiktok video or a discord invite share in <#864588389550129152>, your warn will be removed in 2 days`
-          );
-          await this.warn(
-            message.member!,
-            `Was advertising (${url[0]})`,
-            message.channel as TextChannel
-          );
-        } else {
-          await message.delete();
-          message.channel.send(
-            `<@${message.author.id}> you got 1 warn for sending suspicious links\nIf the link isn't malicious, tell an admin to remove your warn.`
-          );
-          await this.warn(
-            message.member!,
-            `Sent suspicious links (${url[0]})`,
-            message.channel as TextChannel
-          );
-        }
-      }
-
-      if (
-        message.channel.id === "887076630198091796" &&
-        (message.attachments.first() || this.hasURL(message.content))
-      ) {
-        ["✅", "❌"].forEach(async (e) => {
-          await message.react(e);
-        });
-      }
-
-      const time = 4000;
-      const limit = 3;
-
-      if (this.spam.has(message.author.id)) {
-        const data = this.spam.get(message.author.id)!;
-
-        if (!data.stop) {
-          if (message.createdTimestamp - data.time < time) {
-            if (data.infractions > limit) {
-              message.channel.send(
-                `You received 1 warn for **SPAMMING**\nYou have 5 seconds to stop`
-              );
-              this.warn(
-                message.member!,
-                "spamming",
-                message.channel as TextChannel
-              );
-              data.stop = true;
-            } else {
-              data.infractions++;
+        try {
+          const position = (reaction.message.channel as GuildChannel).parent!;
+          const channel = await reaction.message.guild?.channels.create(
+            "🎫｜Ticket " + user.id,
+            {
+              permissionOverwrites: [
+                { id: reaction.message.guild.id, deny: "VIEW_CHANNEL" },
+                { id: user.id, allow: "VIEW_CHANNEL" },
+                {
+                  id: "871100739248848966",
+                  deny: ["SEND_MESSAGES", "ADD_REACTIONS"],
+                },
+                { id: "904163089597988885", allow: "VIEW_CHANNEL" },
+              ],
+              parent: position,
             }
-          } else {
-            this.spam.delete(message.author.id);
-          }
-        } else if (!data.stopped) {
-          data.stopped = true;
-          setTimeout(() => this.spam.delete(message.author.id), 5000);
+          );
+          reaction.users
+            .remove(user instanceof User ? user : undefined)
+            .catch(console.error);
+
+          if (!channel) return;
+
+          channel.send(
+            `<@&904163089597988885>, <@${user.id}> welcome to the support.`
+          );
+          setTimeout(async () => {
+            try {
+              const msg = await channel.send(
+                `React with 📨 on this message to close the ticket`
+              )!;
+              await msg.react("📨");
+              await msg.pin();
+            } catch {
+              return;
+            }
+          }, 2 * 60 * 1000);
+        } catch {
+          return;
         }
-      } else {
-        this.spam.set(message.author.id, {
-          infractions: 1,
-          time: message.createdTimestamp,
-        });
+      } else if (
+        reaction.emoji.name === "📨" &&
+        reaction.message.author &&
+        reaction.message.author.id === this.user!.id &&
+        reaction.message.content ===
+          `React with 📨 on this message to close the ticket` &&
+        user.id !== this.user!.id &&
+        (reaction.message.channel as TextChannel).name.includes("ticket") &&
+        reaction.message.channel.id !== "904147787590021121"
+      )
+        reaction.message.channel.delete();
+    });
+
+    this.on("messageUpdate", async (oldMessage, newMessage) => {
+      if (newMessage instanceof Message && oldMessage instanceof Message) {
+        if (
+          newMessage.content.toLowerCase().includes("nigga") ||
+          newMessage.content.toLowerCase().includes("nigger")
+        ) {
+          await newMessage.delete();
+          newMessage.channel.send(
+            `<@${newMessage.author.id}> you got 1 warn for saying the n word`
+          );
+          await this.warn(
+            newMessage.member!,
+            "Said the n word while editing a message",
+            newMessage.channel as TextChannel
+          );
+        }
+
+        if (oldMessage.mentions.users.size > newMessage.mentions.users.size) {
+          this.report({
+            colour: "#F8F8FF",
+            description: `<@${newMessage.author.id}> ghost pinged ${Array.from(
+              oldMessage.mentions.users
+                .filter(
+                  ({ id, bot }) => !newMessage.mentions.users.has(id) && !bot
+                )
+                .values()
+            )
+              .map(({ id }) => `<@${id}>`)
+              .join(", ")} while editing a message\n[Jump to message](${
+              newMessage.url
+            })`,
+          });
+        }
       }
     });
 
-    this.on("guildMemberAdd", (member) => {
-      this.welcomeChannel.send(
-        `**Welcome** <@${member.id}> to **${member.guild.name}** server!`
-      );
+    this.on("messageDelete", (message) => {
+      if (message.mentions.users.size && message.author) {
+        this.report({
+          colour: "#F8F8FF",
+          description: `<@${message.author.id}> ghost pinged ${Array.from(
+            message.mentions.users.filter(({ bot }) => !bot).values()
+          )
+            .map(({ id }) => `<@${id}>`)
+            .join(", ")} in <#${message.channelId}>`,
+        });
+      }
+    });
+    // Message event
+    this.on("messageCreate", async (message) => {
+      try {
+        if (message.author.bot || message.channel.type === "DM") return;
 
+        if (message.channelId === "908676957938544650") {
+          await message.delete();
+          if (message.content.length > 10) {
+            const msg = await message.channel.send({
+              embeds: [
+                new MessageEmbed()
+                  .setAuthor(
+                    message.member?.displayName || message.author.username,
+                    message.author.displayAvatarURL()
+                  )
+                  .setColor("YELLOW")
+                  .setDescription(message.content),
+              ],
+            });
+
+            await msg.react("✅");
+            await msg.react("❌");
+          }
+        }
+
+        if (!message.content.startsWith(this.prefix + "afk")) {
+          const afkStatus = await this.get(`AFK/${message.author.id}`);
+          if (afkStatus && afkStatus.on) {
+            await this.remove(`AFK/${message.author.id}`);
+            message.channel.send(
+              `Welcome back <@${message.author.id}>, I removed your AFK`
+            );
+          }
+        }
+
+        if (message.mentions.members?.size)
+          message.mentions.members.forEach(async (afkUser) => {
+            const afk = await this.get(`AFK/${afkUser.id}`);
+            if (afk && afk.on) {
+              const reason: string | undefined = afk.reason;
+              const time = afk.time
+                ? this.convert(Date.now() - afk.time)
+                : undefined;
+
+              message.channel.send(
+                `<@${afkUser.id}> is AFK${
+                  reason ? ", **" + reason + "**" : ""
+                }.${time ? ` ${time} ago` : ""}`
+              );
+            }
+          });
+
+        if (
+          message.content.toLowerCase().includes("nigga") ||
+          message.content.toLowerCase().includes("nigger")
+        ) {
+          await message.delete();
+          message.channel.send(
+            `<@${message.author.id}> you got 1 warn for saying the n word`
+          );
+          await this.warn(
+            message.member!,
+            "Said the n word",
+            message.channel as TextChannel
+          );
+        }
+
+        if (
+          message.channel.id === "887076630198091796" &&
+          (message.attachments.first() || this.hasURL(message.content))
+        ) {
+          ["✅", "❌"].forEach(async (e) => {
+            await message.react(e);
+          });
+        }
+
+        const time = 4000;
+        const limit = 3;
+
+        if (this.spam.has(message.author.id)) {
+          const data = this.spam.get(message.author.id)!;
+
+          if (!data.stop) {
+            if (message.createdTimestamp - data.time < time) {
+              if (data.infractions > limit) {
+                message.channel.send(
+                  `You received 1 warn for **SPAMMING**\nYou have 5 seconds to stop`
+                );
+                this.warn(
+                  message.member!,
+                  "spamming",
+                  message.channel as TextChannel
+                );
+                data.stop = true;
+              } else {
+                data.infractions++;
+              }
+            } else {
+              this.spam.delete(message.author.id);
+            }
+          } else if (!data.stopped) {
+            data.stopped = true;
+            setTimeout(() => this.spam.delete(message.author.id), 5000);
+          }
+        } else {
+          this.spam.set(message.author.id, {
+            infractions: 1,
+            time: message.createdTimestamp,
+          });
+        }
+
+        const generatedXP = Math.floor(Math.random() * message.content.length);
+
+        const authorLevels: { level: number; xp: number } | undefined =
+          await this.get("Levels/" + message.author.id);
+        if (!authorLevels?.level) {
+          await this.set("Levels/" + message.author.id, {
+            level: 1,
+            xp: generatedXP,
+          });
+
+          await this.updateLevelRole(message.member!, 1);
+        } else {
+          const newXP: number = generatedXP + authorLevels.xp;
+          const toLevelUP = authorLevels.level * 500;
+
+          if (newXP >= toLevelUP) {
+            const level = authorLevels.level + 1;
+            await this.update("Levels/" + message.author.id, {
+              level,
+              xp: newXP - toLevelUP,
+            });
+            await this.updateLevelRole(message.member!, level);
+            message.channel.send(
+              `Congratulations <@${message.author.id}> you are now level **${level}**`
+            );
+          } else
+            this.update("Levels/" + message.author.id, {
+              level: authorLevels.level,
+              xp: newXP,
+            });
+        }
+      } catch {
+        return;
+      }
+    });
+
+    this.on("guildMemberAdd", async (member) => {
       if (member.user.bot) member.roles.add("864586947115352064");
+      else {
+        this.welcomeChannel.send(
+          `**Welcome** <@${member.id}> to **${member.guild.name}** server!`
+        );
+
+        const userMute = await this.get(`mutes/${member.id}`);
+
+        if (userMute?.time && userMute?.time > Date.now()) {
+          await member.roles.add("871100739248848966");
+
+          this.report({
+            colour: "YELLOW",
+            description: `<@${member.id}> re-joined and was muted`,
+          });
+        }
+      }
     });
 
     this.on("guildMemberRemove", ({ displayName }) => {
@@ -198,25 +373,33 @@ class Client extends DJSClient {
     });
 
     this.on("messageCreate", async (message) => {
+      if (message.author.bot || message.channel.type === "DM") return;
       const { prefix } = this;
       if (!message.content.startsWith(prefix)) return;
 
       const args = message.content.slice(prefix.length).trim().split(/ +/g);
 
-      const cmdName = args.shift();
+      const cmdName = args.shift()?.toLowerCase();
+
+      if (!cmdName) return;
 
       if (
-        !message.content.startsWith(
-          `${prefix.toLowerCase()}${cmdName?.toLowerCase()}`
-        )
+        !message.content
+          .toLowerCase()
+          .startsWith(`${prefix.toLowerCase()}${cmdName}`)
       )
         return;
 
       const cmd =
-        this.commands.get(cmdName!.toLowerCase()) ||
-        this.commands.get(this.aliases.get(cmdName!.toLowerCase())!); // Get command
+        this.commands.get(cmdName) ||
+        this.commands.get(this.aliases.get(cmdName) || ""); // Get command
 
       if (!cmd) return;
+
+      if (cmd.admin && !message.member?.permissions.has("ADMINISTRATOR")) {
+        message.channel.send("You don't have permission to use this command");
+        return;
+      }
 
       cmd.run({ client: this, args, message }); // run it
       return;
@@ -274,7 +457,7 @@ class Client extends DJSClient {
 
       if (command.aliases?.length)
         for (const alias of command.aliases)
-          this.aliases.set(alias, command.name); // setting aliases
+          this.aliases.set(alias.toLowerCase(), command.name.toLowerCase()); // setting aliases
 
       if (command.category) {
         let category = command.category;
@@ -440,12 +623,7 @@ class Client extends DJSClient {
 
         for (const thisWarn of warn.warns) {
           if (thisWarn.time <= Date.now()) {
-            await this.unwarn(warn._id, thisWarn);
-
-            this.report({
-              colour: "YELLOW",
-              description: `<@${warn._id}> was auto-unwarned\nReason: warn timeout expired`,
-            });
+            await this.unwarn(warn._id, thisWarn, "warn timeout expired");
           } else continue;
         }
       }
@@ -601,6 +779,79 @@ class Client extends DJSClient {
     } catch {
       return;
     }
+  }
+
+  public async getMember<T extends "USER" | "MEMBER">(
+    type: T,
+    message: Message,
+    id?: Snowflake
+  ): Promise<
+    | undefined
+    | (T extends "USER" ? User : T extends "MEMBER" ? GuildMember : never)
+  > {
+    try {
+      if (!id) return;
+
+      if (type === "USER")
+        return (message.mentions.users.first() ||
+          (await this.users.fetch(id))) as
+          | undefined
+          | (T extends "USER"
+              ? User
+              : T extends "MEMBER"
+              ? GuildMember
+              : never);
+      else if (type === "MEMBER")
+        return (message.mentions.members?.first() ||
+          (await message.guild?.members.fetch(id))) as
+          | undefined
+          | (T extends "USER"
+              ? User
+              : T extends "MEMBER"
+              ? GuildMember
+              : never);
+
+      return;
+    } catch {
+      return;
+    }
+  }
+
+  private async updateLevelRole(member: GuildMember, level: number) {
+    const roles: {
+      [level: number]: Snowflake;
+    } = {
+      1: "906292242661134367",
+      2: "906292244506628136",
+      3: "906292245500674068",
+      4: "906292246482137108",
+      5: "906292247266467841",
+      10: "906292248780632105",
+      15: "906292249636257883",
+      20: "906292250781315093",
+      25: "906292251678887956",
+      30: "906292252605808741",
+      35: "906292253679566908",
+      40: "906292254799458344",
+      45: "906292255697010698",
+      50: "906292256594595880",
+      60: "906292257529933904",
+      70: "906292258280730665",
+      80: "906292259501244486",
+      90: "906292260142981191",
+      100: "906292261350932561",
+    };
+    try {
+      if (level in roles) {
+        await member.roles.add(roles[level]);
+      }
+    } catch {
+      return;
+    }
+  }
+
+  public toFahrenheit(celsius: number) {
+    return celsius * 1.8 + 32;
   }
 }
 
