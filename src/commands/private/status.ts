@@ -57,8 +57,8 @@ export default {
   name: "status",
   async run({ message, client, args }) {
     try {
-      if (message.author.id !== "811657485462274129")
-        return message.channel.send("Only Cannon can use this command");
+      if (!["811657485462274129", "547343773613424650"].includes(message.author.id))
+        return message.channel.send("You can not use this command");
 
       await setActivityCollector(client, message);
     } catch (e) {

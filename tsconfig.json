@@ -21,6 +21,6 @@
         "resolveJsonModule": true,
         "lib": ["esnext"],
     },
-    "include": ["./src"],
+    "include": ["./src", "src/commands/information/botinfo.ts"],
     "exclude": ["./src/types"],
 }

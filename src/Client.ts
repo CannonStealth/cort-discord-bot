@@ -14,12 +14,12 @@ import {
   Message,
 } from "discord.js";
 import { join } from "path";
-import { readdir, lstat } from "fs/promises";
+import { readdir, lstat, readFile } from "fs/promises";
 import { key, Command, Slash, Warns as SchemaWarns, Warn } from "./types";
 import Clash from "./Clash";
 import firebaseConfig from "./firebase.json";
 import firebase from "firebase";
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import { token, mongo } from "./config.json";
 
 class Client extends DJSClient {
@@ -32,7 +32,12 @@ class Client extends DJSClient {
   public helpMenu?: MessageOptions;
   public welcomeChannel!: TextChannel;
   public formsChannel!: TextChannel;
+  public logsMessage!: TextChannel;
   public readonly day: number;
+  public readonly codeInfo: {
+    files: number,
+    lines: number
+  }
   public readonly clientToken: this["token"];
   public readonly database: firebase.database.Database;
   public reportChannel!: TextChannel;
@@ -62,6 +67,10 @@ class Client extends DJSClient {
     this.mongoPath = mongo;
     this.dir = require.main?.path!;
     this.spam = new Map();
+    this.codeInfo = {
+      lines: 0,
+      files: 0
+    }
     this.warnings = mongoose.model(
       "warns",
       new mongoose.Schema({
@@ -91,6 +100,7 @@ class Client extends DJSClient {
       })
       .then(() => console.log(`Connected to MongoDB`))
       .catch(console.error);
+
 
     this.on("messageReactionAdd", async (reaction, user) => {
       if (
@@ -155,6 +165,11 @@ class Client extends DJSClient {
 
     this.on("messageUpdate", async (oldMessage, newMessage) => {
       if (newMessage instanceof Message && oldMessage instanceof Message) {
+        if (/([f][^]?[a][^]?[m])/gi.test(newMessage.content)) {
+          newMessage.delete();
+          return;
+        }
+
         if (
           newMessage.content.toLowerCase().includes("nigga") ||
           newMessage.content.toLowerCase().includes("nigger")
@@ -168,7 +183,27 @@ class Client extends DJSClient {
             "Said the n word while editing a message",
             newMessage.channel as TextChannel
           );
+
+          return;
         }
+
+        if (oldMessage.member && newMessage.member) {
+          if (oldMessage.member.id !== this.user!.id && newMessage.member.id !== this.user!.id) {
+          const embed = new MessageEmbed()
+            .setColor("YELLOW")
+            .setTimestamp()
+            .setDescription(
+              `**${oldMessage.member.displayName} edited a message**\n**Before:** ${oldMessage.content}\n**After:** ${newMessage.content}`
+            );
+
+          const image = newMessage.attachments.first()?.url;
+          if (image) embed.setImage(image);
+
+          this.logsMessage.send({
+            embeds: [embed],
+          });
+        }
+      }
 
         if (oldMessage.mentions.users.size > newMessage.mentions.users.size) {
           this.report({
@@ -189,16 +224,41 @@ class Client extends DJSClient {
       }
     });
 
-    this.on("messageDelete", (message) => {
-      if (message.mentions.users.size && message.author) {
-        this.report({
-          colour: "#F8F8FF",
-          description: `<@${message.author.id}> ghost pinged ${Array.from(
-            message.mentions.users.filter(({ bot }) => !bot).values()
-          )
-            .map(({ id }) => `<@${id}>`)
-            .join(", ")} in <#${message.channelId}>`,
+    this.on("messageDelete", async (message) => {
+      if (message.member && message.author && message.guild) {
+        const logs = await message.guild.fetchAuditLogs({
+          type: "MESSAGE_DELETE",
+          limit: 1,
         });
+
+        const user = logs.entries.first()?.executor?.id;
+
+        const embed = new MessageEmbed()
+          .setColor("YELLOW")
+          .setTimestamp()
+          .setDescription(
+            `**${message.member.displayName}'s message was deleted${
+              user ? ` by <@${user}>**` : "**"
+            }${message.content ? `\n**Content:** ${message.content}` : ""}`
+          );
+
+        const image = message.attachments.first()?.url;
+        if (image) embed.setImage(image);
+
+        this.logsMessage.send({
+          embeds: [embed],
+        });
+
+        if (message.mentions.users.size) {
+          this.report({
+            colour: "#F8F8FF",
+            description: `<@${message.author.id}> ghost pinged ${Array.from(
+              message.mentions.users.filter(({ bot }) => !bot).values()
+            )
+              .map(({ id }) => `<@${id}>`)
+              .join(", ")} in <#${message.channelId}>`,
+          });
+        }
       }
     });
     // Message event
@@ -266,15 +326,6 @@ class Client extends DJSClient {
             "Said the n word",
             message.channel as TextChannel
           );
-        }
-
-        if (
-          message.channel.id === "887076630198091796" &&
-          (message.attachments.first() || this.hasURL(message.content))
-        ) {
-          ["✅", "❌"].forEach(async (e) => {
-            await message.react(e);
-          });
         }
 
         const time = 4000;
@@ -374,6 +425,12 @@ class Client extends DJSClient {
 
     this.on("messageCreate", async (message) => {
       if (message.author.bot || message.channel.type === "DM") return;
+
+      if (/([f][^]?[a][^]?[m])/gi.test(message.content)) {
+        message.delete();
+        return;
+      }
+
       const { prefix } = this;
       if (!message.content.startsWith(prefix)) return;
 
@@ -853,6 +910,28 @@ class Client extends DJSClient {
   public toFahrenheit(celsius: number) {
     return celsius * 1.8 + 32;
   }
+
+  public async readCode(dir: string)  {
+
+    let files = await readdir(dir);
+ 
+    for (const file of files) {
+        let stat = await lstat(join(dir, file));
+        if (stat.isDirectory()) {
+            this.readCode(join(dir, file));
+        } else {
+            if ((file.endsWith(".ts") || file.endsWith(".js")) && !file.endsWith(".d.ts")) {
+                const buffer = (await readFile(join(dir, file))).toString();
+                const lines = buffer.split("\n");
+                this.codeInfo.lines += lines.length;
+                this.codeInfo.files++;
+            }
+        }
+    }
+
+};
 }
+
+
 
 export default Client;
