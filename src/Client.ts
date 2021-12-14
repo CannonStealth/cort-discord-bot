@@ -187,7 +187,7 @@ class Client extends DJSClient {
           return;
         }
 
-        if (oldMessage.member && newMessage.member) {
+        if (oldMessage.member && newMessage.member && !newMessage.author.bot) {
           if (oldMessage.member.id !== this.user!.id && newMessage.member.id !== this.user!.id) {
           const embed = new MessageEmbed()
             .setColor("YELLOW")
@@ -225,21 +225,13 @@ class Client extends DJSClient {
     });
 
     this.on("messageDelete", async (message) => {
-      if (message.member && message.author && message.guild) {
-        const logs = await message.guild.fetchAuditLogs({
-          type: "MESSAGE_DELETE",
-          limit: 1,
-        });
 
-        const user = logs.entries.first()?.executor?.id;
-
+      if (message.member && message.author && message.guild && !message.author.bot) {
         const embed = new MessageEmbed()
           .setColor("YELLOW")
           .setTimestamp()
           .setDescription(
-            `**${message.member.displayName}'s message was deleted${
-              user ? ` by <@${user}>**` : "**"
-            }${message.content ? `\n**Content:** ${message.content}` : ""}`
+            `**${message.member.displayName}'s message was deleted\n**Content:** ${message.content}`
           );
 
         const image = message.attachments.first()?.url;
